@@ -389,7 +389,7 @@
         // ── Playback ───────────────────────────────────────────────────────────
         function playSegment() {
             const s = sentences[currentIdx];
-            stopAt = s.end_sec - 0.25;
+            stopAt = s.end_sec + 0.2;
             if (stopTimer) { clearInterval(stopTimer); stopTimer = null; }
             audio.pause();
             audio.playbackRate = playbackSpeed;
