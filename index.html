@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>German Listening Practice</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 640px;
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .play-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 8px 0;
+        }
+
+        .play-btn {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: #4f7cff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+            box-shadow: 0 4px 20px rgba(79,124,255,0.3);
+        }
+
+        .play-btn:hover { background: #3d6ae0; }
+        .play-btn:active { transform: scale(0.95); }
+        .play-btn.playing { background: #e05555; box-shadow: 0 4px 20px rgba(224,85,85,0.35); }
+        .play-btn svg { width: 34px; height: 34px; fill: white; }
+
+        .play-hint { font-size: 13px; color: #444; }
+
+        textarea {
+            width: 100%;
+            min-height: 110px;
+            background: #222;
+            border: 2px solid #2a2a2a;
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 16px;
+            font-family: inherit;
+            line-height: 1.6;
+            padding: 14px;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        textarea:focus { border-color: #4f7cff; }
+        textarea:disabled { opacity: 0.45; cursor: default; }
+
+        .btn-row { display: flex; gap: 12px; }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn-check { background: #4f7cff; color: white; }
+        .btn-check:hover { background: #3d6ae0; }
+        .btn-check:disabled { opacity: 0.35; cursor: default; transform: none; }
+        .btn-next { background: #252525; color: #aaa; display: none; }
+        .btn-next:hover { background: #2e2e2e; }
+        .btn-next.visible { display: block; }
+
+        .result { display: none; flex-direction: column; gap: 16px; padding-top: 4px; }
+        .result.visible { display: flex; }
+
+        .similarity-row { display: flex; align-items: center; gap: 20px; }
+
+        .similarity-pct { font-size: 52px; font-weight: 800; line-height: 1; min-width: 110px; }
+        .similarity-msg  { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .similarity-label { font-size: 13px; color: #555; }
+
+        .correct-box {
+            background: #1e261e;
+            border: 1px solid #2a3d2a;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .correct-label {
+            font-size: 10px; color: #4a7a4a; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+        }
+
+        .correct-text { font-size: 15px; line-height: 1.65; color: #a8c8a8; }
+
+        .translation-box {
+            background: #1a1e26;
+            border: 1px solid #2a3040;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .translation-label {
+            font-size: 10px; color: #4a6a9a; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+        }
+
+        .translation-text { font-size: 15px; line-height: 1.65; color: #8aaccc; }
+        .translation-text.loading { color: #333; font-style: italic; }
+        .translation-text.error   { color: #555; font-style: italic; }
+
+        .word-timing { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .word-chip {
+            background: #1e1e1e;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 5px 9px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .word-chip .wtext { font-size: 13px; color: #ccc; }
+        .word-chip .wdur  { font-size: 10px; font-weight: 700; }
+
+        .umlaut-row { display: flex; gap: 8px; }
+
+        .umlaut-btn {
+            flex: 1;
+            padding: 8px;
+            background: #252525;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #bbb;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.1s, color 0.1s;
+        }
+
+        .umlaut-btn:hover { background: #333; color: #fff; }
+
+        .controls-row {
+            width: 100%;
+            max-width: 640px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label { font-size: 12px; color: #444; min-width: 76px; }
+
+        .filter-btn {
+            padding: 6px 12px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 20px;
+            color: #555;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .filter-btn:hover { border-color: #444; color: #888; }
+        .filter-btn.active { background: #4f7cff; border-color: #4f7cff; color: #fff; }
+
+        .stats {
+            width: 100%;
+            max-width: 640px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            font-size: 13px;
+            color: #444;
+        }
+
+        .stat-val { color: #777; font-weight: 600; }
+
+        .finished {
+            text-align: center; padding: 40px 32px;
+            display: flex; flex-direction: column; align-items: center; gap: 14px;
+        }
+
+        .finished .big  { font-size: 48px; }
+        .finished h2    { font-size: 26px; font-weight: 700; }
+        .finished .sub  { color: #555; font-size: 15px; }
+        .finished .score { font-size: 52px; font-weight: 800; color: #4f7cff; }
+    </style>
+</head>
+<body>
+
+    <div class="controls-row">
+        <div class="filter-row" id="speedRow">
+            <span class="filter-label">Speed</span>
+            <button class="filter-btn speed-btn" data-speed="1.0" onclick="setSpeed(1.0, this)">1×</button>
+            <button class="filter-btn speed-btn" data-speed="1.1" onclick="setSpeed(1.1, this)">1.1×</button>
+            <button class="filter-btn speed-btn" data-speed="1.2" onclick="setSpeed(1.2, this)">1.2×</button>
+            <button class="filter-btn speed-btn" data-speed="1.3" onclick="setSpeed(1.3, this)">1.3×</button>
+            <button class="filter-btn speed-btn" data-speed="1.4" onclick="setSpeed(1.4, this)">1.4×</button>
+            <button class="filter-btn speed-btn" data-speed="1.5" onclick="setSpeed(1.5, this)">1.5×</button>
+        </div>
+    </div>
+
+    <div class="card" id="card">
+
+        <div class="play-section">
+            <button class="play-btn" id="playBtn" onclick="onPlayBtnClick()">
+                <svg viewBox="0 0 24 24"><path id="playIcon" d="M8 5v14l11-7z"/></svg>
+            </button>
+            <div class="paused-btns" id="pausedBtns" style="display:none; gap:10px; justify-content:center;">
+                <button class="btn btn-check" style="flex:none;padding:10px 24px;font-size:14px" onclick="continueSegment()">Continue</button>
+                <button class="btn btn-next visible" style="flex:none;padding:10px 24px;font-size:14px" onclick="restartSegment()">Restart</button>
+            </div>
+            <div class="play-hint">Press to play &nbsp;·&nbsp; replay as many times as you need</div>
+        </div>
+
+        <textarea id="inputArea" placeholder="Type what you heard…" onkeydown="handleKey(event)"></textarea>
+
+        <div class="umlaut-row">
+            <button class="umlaut-btn" onclick="insertChar('ä')">ä</button>
+            <button class="umlaut-btn" onclick="insertChar('ö')">ö</button>
+            <button class="umlaut-btn" onclick="insertChar('ü')">ü</button>
+            <button class="umlaut-btn" onclick="insertChar('ß')">ß</button>
+            <button class="umlaut-btn" onclick="insertChar('Ä')">Ä</button>
+            <button class="umlaut-btn" onclick="insertChar('Ö')">Ö</button>
+            <button class="umlaut-btn" onclick="insertChar('Ü')">Ü</button>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn btn-check" id="checkBtn" onclick="checkAnswer()">Check</button>
+            <button class="btn btn-next"  id="nextBtn"  onclick="nextSentence()">Next →</button>
+        </div>
+
+        <div class="result" id="result">
+            <div class="similarity-row">
+                <div class="similarity-pct" id="simPct"></div>
+                <div>
+                    <div class="similarity-msg" id="simMsg"></div>
+                    <div class="similarity-label">similarity to transcript</div>
+                </div>
+            </div>
+            <div class="correct-box">
+                <div class="correct-label">Transcript</div>
+                <div class="correct-text" id="correctText"></div>
+            </div>
+            <div class="translation-box">
+                <div class="translation-label">English</div>
+                <div class="translation-text loading" id="translationText">translating…</div>
+            </div>
+            <div class="word-timing" id="wordTiming"></div>
+        </div>
+
+    </div>
+
+    <div class="stats">
+        <div>Checked &nbsp;<span class="stat-val" id="statChecked">0</span></div>
+    </div>
+
+    <audio id="audioEl" preload="metadata"></audio>
+
+    <script>
+        let allSentences    = [];
+        let sentences       = [];
+        let currentIdx      = 0;
+        let scores          = [];
+        let stopAt          = 0;
+        let stopTimer       = null;
+        let currentAudioFile = null;
+        const episodeWords  = {};   // lazy cache: episode → words[]
+
+        // ── Speed ─────────────────────────────────────────────────────────────
+        let playbackSpeed = parseFloat(localStorage.getItem('sg_speed') || '1.5');
+
+        function initSpeedButtons() {
+            document.querySelectorAll('.speed-btn').forEach(b => {
+                if (parseFloat(b.dataset.speed) === playbackSpeed)
+                    b.classList.add('active');
+            });
+        }
+
+        function setSpeed(speed, btn) {
+            playbackSpeed = speed;
+            localStorage.setItem('sg_speed', speed);
+            audio.playbackRate = speed;
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        initSpeedButtons();
+
+        // ── Audio element ──────────────────────────────────────────────────────
+        const audio    = document.getElementById('audioEl');
+        const playBtn  = document.getElementById('playBtn');
+        const playIcon = document.getElementById('playIcon');
+
+        // ── Load sentences ─────────────────────────────────────────────────────
+        fetch('sg_sentences.json')
+            .then(r => r.json())
+            .then(data => { allSentences = data; applyFilter(); })
+            .catch(() => {
+                document.getElementById('card').innerHTML =
+                    `<div style="text-align:center;padding:32px;color:#f44;line-height:2">
+                        Could not load data. Run:<br>
+                        <code style="background:#222;padding:6px 12px;border-radius:6px;display:inline-block;margin-top:8px">
+                        python3 serve.py</code><br>from the slow_german/ folder.
+                    </div>`;
+            });
+
+        // ── Lazy-load per-episode word timings ─────────────────────────────────
+        async function getEpisodeWords(epNum) {
+            if (episodeWords[epNum] !== undefined) return episodeWords[epNum];
+            try {
+                const d = await fetch(`cache/sg${epNum}.json`).then(r => r.json());
+                episodeWords[epNum] = d.words || [];
+            } catch {
+                episodeWords[epNum] = [];
+            }
+            return episodeWords[epNum];
+        }
+
+        // ── Sentence loading ───────────────────────────────────────────────────
+        function loadSentence(idx) {
+            if (idx >= sentences.length) { showFinished(); return; }
+            currentIdx = idx;
+            const s = sentences[idx];
+
+            // Switch audio file when episode changes
+            if (s.audio_file !== currentAudioFile) {
+                if (stopTimer) { clearInterval(stopTimer); stopTimer = null; }
+                audio.pause();
+                audio.src = `audio/${s.audio_file}`;
+                currentAudioFile = s.audio_file;
+            }
+
+            document.getElementById('inputArea').value    = '';
+            document.getElementById('inputArea').disabled = false;
+            document.getElementById('checkBtn').disabled  = false;
+            document.getElementById('result').classList.remove('visible');
+            document.getElementById('nextBtn').classList.remove('visible');
+            document.getElementById('wordTiming').innerHTML = '';
+            document.getElementById('translationText').textContent = 'translating…';
+            document.getElementById('translationText').className = 'translation-text loading';
+
+            if (stopTimer) { clearInterval(stopTimer); stopTimer = null; }
+            audio.pause();
+            setIcon('play');
+            showPlayBtn();
+
+            // Preload words for this episode in background
+            getEpisodeWords(s.episode);
+        }
+
+        // ── Playback ───────────────────────────────────────────────────────────
+        function playSegment() {
+            const s = sentences[currentIdx];
+            stopAt = s.end_sec - 0.25;
+            if (stopTimer) { clearInterval(stopTimer); stopTimer = null; }
+            audio.pause();
+            audio.playbackRate = playbackSpeed;
+            audio.currentTime  = Math.max(0, s.start_sec - 0.2);
+            audio.play()
+                .then(() => {
+                    setIcon('pause');
+                    stopTimer = setInterval(() => {
+                        if (audio.currentTime >= stopAt) {
+                            audio.pause();
+                            setIcon('play');
+                            clearInterval(stopTimer);
+                            stopTimer = null;
+                        }
+                    }, 10);
+                })
+                .catch(e => console.error('play blocked:', e));
+        }
+
+        function showPlayBtn()    { playBtn.style.display = ''; document.getElementById('pausedBtns').style.display = 'none'; }
+        function showPausedBtns() { playBtn.style.display = 'none'; document.getElementById('pausedBtns').style.display = 'flex'; }
+
+        function setIcon(state) {
+            if (state === 'play') {
+                playIcon.setAttribute('d', 'M8 5v14l11-7z');
+                playBtn.classList.remove('playing');
+            } else {
+                playIcon.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+                playBtn.classList.add('playing');
+            }
+        }
+
+        function onPlayBtnClick() {
+            if (!audio.paused) {
+                audio.pause();
+                if (stopTimer) { clearInterval(stopTimer); stopTimer = null; }
+                showPausedBtns();
+            } else {
+                playSegment();
+            }
+        }
+
+        function continueSegment() {
+            showPlayBtn();
+            setIcon('pause');
+            audio.playbackRate = playbackSpeed;
+            audio.play().then(() => {
+                stopTimer = setInterval(() => {
+                    if (audio.currentTime >= stopAt) {
+                        audio.pause();
+                        setIcon('play');
+                        clearInterval(stopTimer);
+                        stopTimer = null;
+                    }
+                }, 10);
+            });
+        }
+
+        function restartSegment() { showPlayBtn(); playSegment(); }
+
+        // ── Translation ────────────────────────────────────────────────────────
+        async function fetchTranslation(text) {
+            const el = document.getElementById('translationText');
+            el.textContent = 'translating…';
+            el.className = 'translation-text loading';
+            try {
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=de|en`;
+                const res = await fetch(url);
+                const data = await res.json();
+                const t = data?.responseData?.translatedText;
+                if (t && data.responseStatus === 200) {
+                    el.textContent = t;
+                    el.className = 'translation-text';
+                } else {
+                    throw new Error('bad response');
+                }
+            } catch {
+                el.textContent = 'Translation unavailable (no internet?)';
+                el.className = 'translation-text error';
+            }
+        }
+
+        // ── Similarity ─────────────────────────────────────────────────────────
+        function levenshtein(a, b) {
+            const m = a.length, n = b.length;
+            if (!m) return n; if (!n) return m;
+            const prev = Array.from({length: n+1}, (_, i) => i);
+            const curr = new Array(n+1);
+            for (let i = 1; i <= m; i++) {
+                curr[0] = i;
+                for (let j = 1; j <= n; j++) {
+                    curr[j] = a[i-1] === b[j-1] ? prev[j-1]
+                             : 1 + Math.min(prev[j-1], prev[j], curr[j-1]);
+                }
+                prev.splice(0, n+1, ...curr);
+            }
+            return prev[n];
+        }
+
+        function similarity(a, b) {
+            if (!a && !b) return 100; if (!a || !b) return 0;
+            return Math.max(0, Math.round((1 - levenshtein(a,b) / Math.max(a.length,b.length)) * 100));
+        }
+
+        // ── Check answer ───────────────────────────────────────────────────────
+        function checkAnswer() {
+            const userText = document.getElementById('inputArea').value;
+            const s        = sentences[currentIdx];
+            const correct  = s.text;
+            const pct      = similarity(userText, correct);
+            scores.push(pct);
+
+            const color = pct >= 90 ? '#4caf50' : pct >= 70 ? '#8bc34a' : pct >= 50 ? '#ff9800' : '#f44336';
+            const msg   = pct >= 90 ? 'Excellent!' : pct >= 70 ? 'Good!' : pct >= 50 ? 'Getting there' : 'Keep practising';
+
+            document.getElementById('simPct').textContent = pct + '%';
+            document.getElementById('simPct').style.color = color;
+            document.getElementById('simMsg').textContent = msg;
+            document.getElementById('simMsg').style.color = color;
+            document.getElementById('correctText').textContent = correct;
+            document.getElementById('result').classList.add('visible');
+            document.getElementById('checkBtn').disabled = true;
+            document.getElementById('inputArea').disabled = true;
+            document.getElementById('nextBtn').classList.add('visible');
+            document.getElementById('statChecked').textContent = scores.length;
+
+            // Translation — async
+            fetchTranslation(correct);
+
+            // Word timing — async, fills in when ready
+            getEpisodeWords(s.episode).then(words => {
+                const sentWords = words.filter(w => w.start >= s.start_sec - 0.3 && w.end <= s.end_sec + 0.1);
+                document.getElementById('wordTiming').innerHTML = sentWords.map(w => {
+                    const dur = Math.round((w.end - w.start) * 1000);
+                    const col = dur < 150 ? '#f44336' : dur < 300 ? '#ff9800' : '#4caf50';
+                    return `<div class="word-chip">
+                        <span class="wtext">${w.word}</span>
+                        <span class="wdur" style="color:${col}">${dur}ms</span>
+                    </div>`;
+                }).join('');
+            });
+        }
+
+        // ── Navigation ─────────────────────────────────────────────────────────
+        function nextSentence() {
+            if (stopTimer) { clearInterval(stopTimer); stopTimer = null; }
+            audio.pause();
+            loadSentence(currentIdx + 1);
+            document.getElementById('inputArea').focus();
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i+1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function applyFilter() {
+            sentences = shuffle(allSentences.slice());
+            loadSentence(0);
+        }
+
+        // ── Umlaut insert ──────────────────────────────────────────────────────
+        function insertChar(char) {
+            const ta = document.getElementById('inputArea');
+            const s  = ta.selectionStart, e = ta.selectionEnd;
+            ta.value = ta.value.substring(0,s) + char + ta.value.substring(e);
+            ta.selectionStart = ta.selectionEnd = s + 1;
+            ta.focus();
+        }
+
+        function handleKey(ev) {
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                const checkBtn = document.getElementById('checkBtn');
+                const nextBtn  = document.getElementById('nextBtn');
+                if (!checkBtn.disabled)                         checkAnswer();
+                else if (nextBtn.classList.contains('visible')) nextSentence();
+            }
+        }
+
+        // ── Finished screen ────────────────────────────────────────────────────
+        function showFinished() {
+            const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+            document.getElementById('card').innerHTML = `
+                <div class="finished">
+                    <div class="big">🎧</div>
+                    <h2>All done!</h2>
+                    <div class="sub">Completed all ${sentences.length} sentences</div>
+                    <div class="score">${avg}%</div>
+                    <div class="sub">average similarity</div>
+                    <button class="btn btn-check" onclick="location.reload()" style="margin-top:16px;max-width:200px">Start over</button>
+                </div>`;
+        }
+    </script>
+</body>
+</html>
